@@ -84,11 +84,11 @@ module AuthlogicFacebookConnect
       end
 
       def validate_by_facebook_connect
-        facebook_session = controller.facebook_session
-        self.attempted_record = facebook_user_class.find(:first, :conditions => { facebook_uid_field => facebook_session.user.uid })
+        facebook_session = controller.current_facebook_user
+        self.attempted_record = facebook_user_class.find(:first, :conditions => { facebook_uid_field => facebook_session.id })
 
         if self.attempted_record
-          self.attempted_record.send(:"#{facebook_session_key_field}=", facebook_session.session_key)
+          self.attempted_record.send(:"#{facebook_session_key_field}=", facebook_session.client.access_token)
           self.attempted_record.save
         end
 
@@ -101,10 +101,10 @@ module AuthlogicFacebookConnect
             new_user = klass.new
 
             if klass == facebook_user_class
-              new_user.send(:"#{facebook_uid_field}=", facebook_session.user.uid)
-              new_user.send(:"#{facebook_session_key_field}=", facebook_session.session_key)
+              new_user.send(:"#{facebook_uid_field}=", facebook_session.id)
+              new_user.send(:"#{facebook_session_key_field}=", facebook_session.client.access_token)
             else
-              new_user.send(:"build_#{facebook_user_class.to_s.underscore}", :"#{facebook_uid_field}" => facebook_session.user.uid, :"#{facebook_session_key_field}" => facebook_session.session_key)
+              new_user.send(:"build_#{facebook_user_class.to_s.underscore}", :"#{facebook_uid_field}" => facebook_session.id, :"#{facebook_session_key_field}" => facebook_session.client.access_token)
             end
 
             new_user.before_connect(facebook_session) if new_user.respond_to?(:before_connect)
@@ -121,7 +121,8 @@ module AuthlogicFacebookConnect
             else
               self.attempted_record.save_with_validation(false)
             end
-          rescue Facebooker::Session::SessionExpired
+          rescue Exception => e
+            debugger
             errors.add_to_base(I18n.t('error_messages.facebooker_session_expired',
               :default => "Your Facebook Connect session has expired, please reconnect."))
           end
@@ -129,8 +130,7 @@ module AuthlogicFacebookConnect
       end
 
       def authenticating_with_facebook_connect?
-        controller.set_facebook_session
-        attempted_record.nil? && errors.empty? && controller.facebook_session
+        attempted_record.nil? && errors.empty? && controller.current_facebook_user
       end
 
       private
