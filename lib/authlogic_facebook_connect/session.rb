@@ -85,13 +85,17 @@ module AuthlogicFacebookConnect
 
       def validate_by_facebook_connect
         facebook_session = controller.current_facebook_user
+        # Find a user who has already connected with facebook
         self.attempted_record = facebook_user_class.find(:first, :conditions => { facebook_uid_field => facebook_session.id })
 
+        # If we have a user who already connected with facebook
         if self.attempted_record
+          # Update the access token and save
           self.attempted_record.send(:"#{facebook_session_key_field}=", facebook_session.client.access_token)
           self.attempted_record.save
         end
 
+        # if we dont have an already connected user or we were not told to not create new users
         unless self.attempted_record || facebook_skip_new_user_creation
           begin
             # Get the user from facebook and create a local user.
@@ -101,28 +105,34 @@ module AuthlogicFacebookConnect
             new_user = klass.new
 
             if klass == facebook_user_class
+              # Set the facebook fields on the new record
               new_user.send(:"#{facebook_uid_field}=", facebook_session.id)
               new_user.send(:"#{facebook_session_key_field}=", facebook_session.client.access_token)
             else
               new_user.send(:"build_#{facebook_user_class.to_s.underscore}", :"#{facebook_uid_field}" => facebook_session.id, :"#{facebook_session_key_field}" => facebook_session.client.access_token)
             end
 
+            # Call our before connect hook if it exists in the model
             new_user.before_connect(facebook_session) if new_user.respond_to?(:before_connect)
 
             self.attempted_record = new_user
 
+            # If the user should be a valid user for the model
             if facebook_valid_user
-              errors.add_to_base(
-                I18n.t('error_messages.facebook_user_creation_failed',
-                       :default => 'There was a problem creating a new user ' +
-                                   'for your Facebook account')) unless self.attempted_record.valid?
+              # If the user is not valid throw an error
+              unless self.attempted_record.valid?
+                errors.add_to_base(
+                  I18n.t('error_messages.facebook_user_creation_failed',
+                         :default => 'There was a problem creating a new user ' +
+                                     'for your Facebook account'))
+              end
 
+              # Set the attempted record to nothing since it isn't valid
               self.attempted_record = nil
             else
               self.attempted_record.save_with_validation(false)
             end
           rescue Exception => e
-            debugger
             errors.add_to_base(I18n.t('error_messages.facebooker_session_expired',
               :default => "Your Facebook Connect session has expired, please reconnect."))
           end
