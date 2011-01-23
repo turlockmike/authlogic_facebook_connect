@@ -84,7 +84,7 @@ module AuthlogicFacebookConnect
       end
 
       def validate_by_facebook_connect
-        facebook_session = controller.current_facebook_user
+        facebook_session = controller.current_facebook_user.fetch
         # Find a user who has already connected with facebook
         self.attempted_record = facebook_user_class.find(:first, :conditions => { facebook_uid_field => facebook_session.id })
 
