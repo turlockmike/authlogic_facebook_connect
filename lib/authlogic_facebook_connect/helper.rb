@@ -1,8 +1,6 @@
 module AuthlogicFacebookConnect
   module Helper
     def authlogic_facebook_login_button(text, options = {})
-      # TODO: Make this with correct helpers istead of this uggly hack.
-      
       options[:controller] ||= "user_session"
       options[:onlogin] = "connect_to_facebook();"
       
