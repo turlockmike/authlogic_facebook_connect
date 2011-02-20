@@ -85,7 +85,7 @@ module AuthlogicFacebookConnect
 
       def associate_with_facebook_connect
         facebook_session = controller.current_facebook_user.fetch
-        self.attempted_record = facebook_user_class.find(:first, :conditions => { :email => facebook_session.email, :username => controller.current_user.username })
+        self.attempted_record = controller.current_user
 
         if self.attempted_record
           self.attempted_record.send(:"#{facebook_uid_field}=", facebook_session.id)
