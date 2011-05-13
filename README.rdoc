@@ -24,7 +24,7 @@
 
 === 4. Make your layout look something like this
 
-  Add the <%= fb_connect_async_js %> tage to your application template
+  Add the <%= fb_connect_async_js %> tag to your application template
 
 === 5. Add the Facebook Connect button to your login form
 
