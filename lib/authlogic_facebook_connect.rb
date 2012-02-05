@@ -1,3 +1,11 @@
+
+
+
+
+module AuthlogicFacebookConnect
+
+end
+
 # require "authlogic_facebook_connect/version"
 require "authlogic_facebook_connect/acts_as_authentic"
 require "authlogic_facebook_connect/session"
